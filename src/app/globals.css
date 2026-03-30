@@ -24,3 +24,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ─── Auth form inputs ─────────────────────────────────────────── */
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #1A1A1A;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.auth-input:focus {
+  border-color: #FF3B5C;
+}
+
+.auth-input::placeholder {
+  color: #666;
+}
