@@ -150,6 +150,15 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
+        {/* Historial */}
+        <Link
+          href="/history"
+          className="mt-4 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-opacity hover:opacity-80"
+          style={{ background: '#111', border: '1px solid #1E1E1E', borderRadius: '12px', color: '#888' }}
+        >
+          📋 Mi historial
+        </Link>
+
       </div>
     </main>
   )

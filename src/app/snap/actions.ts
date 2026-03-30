@@ -12,6 +12,7 @@ export interface SnapInput {
 }
 
 export interface SnapResult {
+  id:           string
   title:        string
   type:         'movie' | 'series'
   poster_url:   string | null
@@ -143,6 +144,7 @@ export async function getSnapResult(input: SnapInput): Promise<SnapResult | null
   console.log('[snap] resultado seleccionado:', picked.title)
 
   return {
+    id:           picked.id,
     title:        picked.title,
     type:         picked.type as 'movie' | 'series',
     poster_url:   picked.poster_url,

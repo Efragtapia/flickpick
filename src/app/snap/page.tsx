@@ -4,6 +4,7 @@ import { Nunito } from 'next/font/google'
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSnapResult, type SnapInput, type SnapResult } from './actions'
+import { addToWatchlist, markAsWatched } from '../history/actions'
 
 const nunito = Nunito({ subsets: ['latin'] })
 
@@ -147,6 +148,138 @@ function QuestionStep({
   )
 }
 
+// ─── Componente: Modal guardar resultado ─────────────────────────────────────
+
+function SaveModal({
+  result,
+  onClose,
+}: {
+  result: SnapResult
+  onClose: () => void
+}) {
+  const router = useRouter()
+  const [showRating,    setShowRating]    = useState(false)
+  const [saveRating,    setSaveRating]    = useState(0)
+  const [hovered,       setHovered]       = useState(0)
+  const [isPending,     startTransition]  = useTransition()
+
+  function handleWatchlist() {
+    startTransition(async () => {
+      await addToWatchlist(result.id)
+      router.push('/dashboard')
+    })
+  }
+
+  function handleWatched() {
+    startTransition(async () => {
+      await markAsWatched(result.id, saveRating || undefined)
+      router.push('/dashboard')
+    })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8 sm:items-center"
+      style={{ background: 'rgba(15,15,15,0.96)' }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl p-6"
+        style={{ background: '#111', border: '1px solid #1E1E1E' }}
+      >
+        {/* Mini info */}
+        <div className="mb-5 flex gap-4">
+          {result.poster_url ? (
+            <img
+              src={result.poster_url}
+              alt={result.title}
+              className="flex-shrink-0 rounded-xl object-cover"
+              style={{ width: '56px', height: '84px' }}
+            />
+          ) : (
+            <div
+              className="flex flex-shrink-0 items-center justify-center rounded-xl text-2xl"
+              style={{ width: '56px', height: '84px', background: '#1A1A1A' }}
+            >
+              🎬
+            </div>
+          )}
+          <div className="flex flex-col justify-center">
+            <p className="text-base font-extrabold leading-tight text-white">{result.title}</p>
+            <p className="mt-1 text-xs" style={{ color: '#666' }}>
+              {result.release_year ?? '—'} · {result.type === 'movie' ? 'Película' : 'Serie'}
+            </p>
+          </div>
+        </div>
+
+        {/* Acciones */}
+        {!showRating ? (
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => setShowRating(true)}
+              disabled={isPending}
+              className="w-full py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: '#FF3B5C', borderRadius: '10px' }}
+            >
+              ✓ Ya la vi
+            </button>
+            <button
+              onClick={handleWatchlist}
+              disabled={isPending}
+              className="w-full py-3.5 text-sm font-bold transition-opacity hover:opacity-80"
+              style={{ background: '#1A1A1A', border: '2px solid #333', borderRadius: '10px', color: '#ccc' }}
+            >
+              📋 Guardar para ver después
+            </button>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full py-2 text-xs transition-opacity hover:opacity-70"
+              style={{ color: '#555' }}
+            >
+              Continuar sin guardar
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <p className="text-center text-sm font-bold text-white">¿Cuántas estrellas le das?</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const filled = star <= (hovered || saveRating)
+                return (
+                  <button
+                    key={star}
+                    onClick={() => setSaveRating(star)}
+                    onMouseEnter={() => setHovered(star)}
+                    onMouseLeave={() => setHovered(0)}
+                    className="text-3xl transition-colors"
+                    style={{ color: filled ? '#FF3B5C' : '#333' }}
+                  >
+                    ★
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              onClick={handleWatched}
+              disabled={isPending}
+              className="w-full py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: isPending ? '#555' : '#FF3B5C', borderRadius: '10px' }}
+            >
+              {isPending ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button
+              onClick={() => setShowRating(false)}
+              className="w-full py-2 text-xs transition-opacity hover:opacity-70"
+              style={{ color: '#555' }}
+            >
+              ← Volver
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Componente: Pantalla de loading ─────────────────────────────────────────
 
 function LoadingScreen() {
@@ -281,8 +414,9 @@ export default function SnapPage() {
   const router = useRouter()
   const [step,    setStep]    = useState(0)   // 0,1,2 = preguntas; 3 = result
   const [answers, setAnswers] = useState<Answers>({ time: null, mood: null, company: null })
-  const [result,  setResult]  = useState<SnapResult | null>(null)
-  const [attempt, setAttempt] = useState(1)
+  const [result,        setResult]        = useState<SnapResult | null>(null)
+  const [attempt,       setAttempt]       = useState(1)
+  const [showSaveModal, setShowSaveModal] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   // Preferencias del usuario: las leemos via Server Action del session
@@ -347,8 +481,11 @@ export default function SnapPage() {
   return (
     <main
       className={nunito.className}
-      style={{ background: '#0F0F0F', minHeight: '100vh', color: '#fff' }}
+      style={{ background: '#0F0F0F', minHeight: '100vh', color: '#fff', position: 'relative' }}
     >
+      {showSaveModal && result && (
+        <SaveModal result={result} onClose={() => setShowSaveModal(false)} />
+      )}
       {/* Header */}
       <header
         className="flex items-center justify-between px-6 py-4"
@@ -383,7 +520,7 @@ export default function SnapPage() {
             result={result}
             attempt={attempt}
             isPending={isPending}
-            onAccept={() => router.push('/dashboard')}
+            onAccept={() => setShowSaveModal(true)}
             onRetry={handleRetry}
           />
         )}
