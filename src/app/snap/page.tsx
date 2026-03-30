@@ -317,14 +317,16 @@ export default function SnapPage() {
     }, 200)
   }
 
-  function fetchResult(ans: Required<Answers>, att: number) {
+  function fetchResult(ans: Answers, att: number) {
+    const { time, mood, company } = ans
+    if (!time || !mood || !company) return
     setAttempt(att)
     setStep(3)
     startTransition(async () => {
       const res = await getSnapResult({
-        time:          ans.time,
-        mood:          ans.mood,
-        company:       ans.company,
+        time,
+        mood,
+        company,
         attempt:       att,
         userPlatforms,
         userGenres,

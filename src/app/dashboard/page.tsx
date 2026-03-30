@@ -139,14 +139,15 @@ export default async function DashboardPage() {
             <span className="text-xs font-medium opacity-75">Decide rápido</span>
           </Link>
 
-          <button
+          <Link
+            href="/pick"
             className="flex flex-col items-center justify-center gap-2 py-8 text-white transition-opacity hover:opacity-90 active:opacity-75"
             style={{ background: '#3B82F6', borderRadius: '14px' }}
           >
             <span className="text-3xl">🗳️</span>
             <span className="text-base font-extrabold tracking-wide">Pick</span>
             <span className="text-xs font-medium opacity-75">Vota con amigos</span>
-          </button>
+          </Link>
         </div>
 
       </div>
