@@ -18,7 +18,7 @@ const PLATFORMS = [
 
 const GENRES = [
   'Acción', 'Comedia', 'Drama', 'Terror', 'Ciencia ficción',
-  'Romance', 'Documental', 'Animación', 'Thriller', 'Fantasía',
+  'Romance', 'Documental', 'Animación', 'Suspense', 'Fantasía',
   'Crimen', 'Aventura',
 ]
 

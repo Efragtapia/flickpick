@@ -1,4 +1,5 @@
 import { Nunito } from 'next/font/google'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { signOut } from './actions'
@@ -128,14 +129,15 @@ export default async function DashboardPage() {
 
         {/* Botones principales */}
         <div className="grid grid-cols-2 gap-4">
-          <button
+          <Link
+            href="/snap"
             className="flex flex-col items-center justify-center gap-2 py-8 text-white transition-opacity hover:opacity-90 active:opacity-75"
             style={{ background: '#FF8C00', borderRadius: '14px' }}
           >
             <span className="text-3xl">⚡</span>
             <span className="text-base font-extrabold tracking-wide">Snap</span>
             <span className="text-xs font-medium opacity-75">Decide rápido</span>
-          </button>
+          </Link>
 
           <button
             className="flex flex-col items-center justify-center gap-2 py-8 text-white transition-opacity hover:opacity-90 active:opacity-75"
