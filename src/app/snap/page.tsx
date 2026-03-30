@@ -10,19 +10,31 @@ const nunito = Nunito({ subsets: ['latin'] })
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type Time    = SnapInput['time']
-type Mood    = SnapInput['mood']
-type Company = SnapInput['company']
+type Time      = SnapInput['time']
+type Mood      = SnapInput['mood']
+type Company   = SnapInput['company']
+type MediaType = 'movie' | 'series' | 'surprise'
 
 interface Answers {
-  time:    Time    | null
-  mood:    Mood    | null
-  company: Company | null
+  mediaType: MediaType | null
+  time:      Time      | null
+  mood:      Mood      | null
+  company:   Company   | null
 }
 
 // ─── Datos de preguntas ───────────────────────────────────────────────────────
 
 const QUESTIONS = [
+  {
+    key:      'mediaType' as const,
+    title:    '¿Qué quieres ver?',
+    subtitle: 'Elige el tipo de contenido',
+    options:  [
+      { value: 'movie'    as MediaType, label: 'Película',      icon: '🎬' },
+      { value: 'series'   as MediaType, label: 'Serie',          icon: '📺' },
+      { value: 'surprise' as MediaType, label: 'Sorpréndeme',    icon: '🎲' },
+    ],
+  },
   {
     key:      'time' as const,
     title:    '¿Cuánto tiempo tienes?',
@@ -128,7 +140,7 @@ function QuestionStep({
       </div>
 
       <p className="mb-1 text-xs font-bold uppercase tracking-widest" style={{ color: '#666' }}>
-        Pregunta {step} de 3
+        Pregunta {step} de {QUESTIONS.length}
       </p>
       <h2 className="mb-1 text-2xl font-extrabold text-white">{question.title}</h2>
       <p className="mb-7 text-sm" style={{ color: '#888' }}>{question.subtitle}</p>
@@ -412,10 +424,11 @@ function ResultScreen({
 
 export default function SnapPage() {
   const router = useRouter()
-  const [step,    setStep]    = useState(0)   // 0,1,2 = preguntas; 3 = result
-  const [answers, setAnswers] = useState<Answers>({ time: null, mood: null, company: null })
+  const [step,    setStep]    = useState(0)   // 0-3 = preguntas; 4 = result
+  const [answers, setAnswers] = useState<Answers>({ mediaType: null, time: null, mood: null, company: null })
   const [result,        setResult]        = useState<SnapResult | null>(null)
   const [attempt,       setAttempt]       = useState(1)
+  const [shownIds,      setShownIds]      = useState<string[]>([])
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -442,7 +455,7 @@ export default function SnapPage() {
 
     // Auto-avanzar al siguiente paso tras seleccionar
     setTimeout(() => {
-      if (step < 2) {
+      if (step < QUESTIONS.length - 1) {
         setStep(step + 1)
       } else {
         // Última pregunta respondida → buscar resultado
@@ -452,19 +465,22 @@ export default function SnapPage() {
   }
 
   function fetchResult(ans: Answers, att: number) {
-    const { time, mood, company } = ans
+    const { time, mood, company, mediaType } = ans
     if (!time || !mood || !company) return
     setAttempt(att)
-    setStep(3)
+    setStep(QUESTIONS.length)
     startTransition(async () => {
       const res = await getSnapResult({
         time,
         mood,
         company,
+        mediaType:     mediaType === 'surprise' ? null : (mediaType ?? null),
         attempt:       att,
+        shownIds,
         userPlatforms,
         userGenres,
       })
+      if (res !== null) setShownIds((prev) => [...prev, res.id])
       setResult(res)
     })
   }
@@ -474,9 +490,9 @@ export default function SnapPage() {
     fetchResult(answers as Required<Answers>, attempt + 1)
   }
 
-  const currentQuestion = step < 3 ? QUESTIONS[step] : null
-  const showLoading     = step === 3 && (isPending || !result)
-  const showResult      = step === 3 && !isPending && result
+  const currentQuestion = step < QUESTIONS.length ? QUESTIONS[step] : null
+  const showLoading     = step === QUESTIONS.length && (isPending || !result)
+  const showResult      = step === QUESTIONS.length && !isPending && result
 
   return (
     <main
@@ -524,14 +540,14 @@ export default function SnapPage() {
             onRetry={handleRetry}
           />
         )}
-        {step === 3 && !isPending && !result && (
+        {step === QUESTIONS.length && !isPending && !result && (
           <div className="py-20 text-center">
             <p className="mb-2 text-lg font-bold text-white">Sin resultados</p>
             <p className="mb-6 text-sm" style={{ color: '#666' }}>
               No encontramos nada con estos filtros.
             </p>
             <button
-              onClick={() => { setStep(0); setAnswers({ time: null, mood: null, company: null }); setAttempt(1) }}
+              onClick={() => { setStep(0); setAnswers({ mediaType: null, time: null, mood: null, company: null }); setAttempt(1); setShownIds([]) }}
               className="px-6 py-3 text-sm font-bold text-white"
               style={{ background: '#FF3B5C', borderRadius: '10px' }}
             >
